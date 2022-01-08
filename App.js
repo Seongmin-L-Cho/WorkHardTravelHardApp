@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,8 @@ import {
   TextInput,
   ScrollView,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { theme } from "./colors";
 
 export default function App() {
@@ -19,7 +21,7 @@ export default function App() {
   const [Todos, setTodos] = useState({});
   const Travel = () => setWorking(false);
   const work = () => setWorking(true);
-
+  const storageKey = "@todos";
   const onChnageText = (payload) => {
     setText(payload);
   };
@@ -32,11 +34,22 @@ export default function App() {
     }); //-> 기존 Todo와 나중 Todo의 결합. 첫 {} 은 새로만들어진 new object
     // const newTodos = {...Todos,[Date.now()]: { text, work: working }} -> ES6 스타일
     setTodos(newTodo);
-
+    saveTodo(newTodo);
     setText("");
-    console.log(Todos);
   };
 
+  const saveTodo = async (toSave) => {
+    await AsyncStorage.setItem(storageKey, JSON.stringify(toSave));
+  };
+
+  const loadTodo = async () => {
+    const s = await AsyncStorage.getItem(storageKey);
+    setTodos(JSON.parse(s));
+  };
+
+  useEffect(() => {
+    loadTodo();
+  }, []);
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -68,11 +81,13 @@ export default function App() {
         returnKeyType="done"
       />
       <ScrollView>
-        {Object.keys(Todos).map((key) => (
-          <View style={styles.todo} key={key}>
-            <Text style={styles.todoText}>{Todos[key].text}</Text>
-          </View>
-        ))}
+        {Object.keys(Todos).map((key) =>
+          Todos[key].work === working ? (
+            <View style={styles.todo} key={key}>
+              <Text style={styles.todoText}>{Todos[key].text}</Text>
+            </View>
+          ) : null
+        )}
       </ScrollView>
     </View>
   );
