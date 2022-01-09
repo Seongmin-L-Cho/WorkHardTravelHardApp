@@ -10,6 +10,7 @@ import {
   Pressable, // 아마 Touchable 속성의 대체
   TextInput,
   ScrollView,
+  Alert,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -42,9 +43,29 @@ export default function App() {
     await AsyncStorage.setItem(storageKey, JSON.stringify(toSave));
   };
 
+  const deleteTodo = async (key) => {
+    Alert.alert("Delete To Do?", "Are you sure?", [
+      { text: "Cancel" },
+      {
+        text: "I'm sure",
+        onPress: () => {
+          const newTodo = { ...Todos };
+          delete newTodo[key]; // 삭제 -> state를 mutate하는건 안되지만 새로운 object를 mutate 하는건 괜찮음
+          setTodos(newTodo);
+          saveTodo(newTodo);
+        },
+      },
+    ]);
+    return;
+  };
+
   const loadTodo = async () => {
-    const s = await AsyncStorage.getItem(storageKey);
-    setTodos(JSON.parse(s));
+    try {
+      const s = await AsyncStorage.getItem(storageKey);
+      setTodos(JSON.parse(s));
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   useEffect(() => {
@@ -85,6 +106,9 @@ export default function App() {
           Todos[key].work === working ? (
             <View style={styles.todo} key={key}>
               <Text style={styles.todoText}>{Todos[key].text}</Text>
+              <TouchableOpacity onPress={() => deleteTodo(key)}>
+                <Text>X</Text>
+              </TouchableOpacity>
             </View>
           ) : null
         )}
@@ -122,6 +146,9 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 20,
     borderRadius: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   todoText: {
     color: "white",
